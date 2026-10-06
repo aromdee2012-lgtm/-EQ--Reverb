@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แต่งเสียง EQ + Reverb ง่ายๆ (MP3/WAV) - ลุงแจ่ม อารมณ์ดี</title>
+    <!-- โหลดไลบรารีแปลง MP3 ขนาดเล็กสำหรับเบราว์เซอร์ -->
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #22c55e;
+            --accent-mp3: #0ea5e9;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 520px;
+            box-sizing: border-box;
+        }
+        h2 {
+            margin-top: 0;
+            text-align: center;
+            color: #818cf8;
+            font-size: 1.4rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #38bdf8;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .upload-section {
+            background-color: #0f172a;
+            border: 2px dashed #475569;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .upload-section label {
+            display: block;
+            margin-bottom: 10px;
+            color: #38bdf8;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+        input[type="file"] {
+            width: 100%;
+            color: #f8fafc;
+            background-color: #1e293b;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #475569;
+            cursor: pointer;
+        }
+        .section-box {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            color: #818cf8;
+            font-weight: bold;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 5px;
+        }
+        .control-group {
+            margin-bottom: 12px;
+        }
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        label.range-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+        span.value-label {
+            color: #38bdf8;
+            font-weight: bold;
+        }
+        select, input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background-color: #0f172a;
+            color: white;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+        input[type="range"] {
+            padding: 0;
+            accent-color: var(--primary);
+            cursor: pointer;
+            margin-top: 3px;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        .btn-mp3 {
+            background-color: var(--accent-mp3);
+            color: white;
+        }
+        .btn-mp3:hover {
+            background-color: #0284c7;
+        }
+        .btn-success {
+            background-color: var(--accent);
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #16a34a;
+        }
+        .btn:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .status {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 15px;
+        }
+        audio {
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎛️ ปรับแต่ง EQ + Reverb</h2>
+    <div class="subtitle">โดย ลุงแจ่ม อารมณ์ดี</div>
+    
+    <!-- ช่องเลือกไฟล์ -->
+    <div class="upload-section">
+        <label for="audioFile">📁 เลือกไฟล์เพลง (MP3 หรือ WAV)</label>
+        <input type="file" id="audioFile" accept="audio/*">
+    </div>
+
+    <!-- ส่วนปรับแต่ง EQ 5 ย่าน -->
+    <div class="section-box">
+        <div class="section-title">🎚️ ปรับแต่งความถี่เสียง (5-Band EQ)</div>
+        
+        <div class="control-group">
+            <label class="range-label"><span>60 Hz (เบสทุ้ม):</span> <span id="eq1Val" class="value-label">0 dB</span></label>
+            <input type="range" id="eq1Range" min="-12" max="12" value="0" step="1">
+        </div>
+
+        <div class="control-group">
+            <label class="range-label"><span>230 Hz (เสียงกลางต่ำ):</span> <span id="eq2Val" class="value-label">0 dB</span></label>
+            <input type="range" id="eq2Range" min="-12" max="12" value="0" step="1">
+        </div>
+
+        <div class="control-group">
+            <label class="range-label"><span>1 kHz (เสียงร้องหลัก):</span> <span id="eq3Val" class="value-label">0 dB</span></label>
+            <input type="range" id="eq3Range" min="-12" max="12" value="0" step="1">
+        </div>
+
+        <div class="control-group">
+            <label class="range-label"><span>4 kHz (ความใส/พุ่ง):</span> <span id="eq4Val" class="value-label">0 dB</span></label>
+            <input type="range" id="eq4Range" min="-12" max="12" value="0" step="1">
+        </div>
+
+        <div class="control-group">
+            <label class="range-label"><span>12 kHz (แหลมประกาย):</span> <span id="eq5Val" class="value-label">0 dB</span></label>
+            <input type="range" id="eq5Range" min="-12" max="12" value="0" step="1">
+        </div>
+    </div>
+
+    <!-- ส่วนปรับแต่ง Reverb -->
+    <div class="section-box">
+        <div class="section-title">🏛️ ตั้งค่าเอฟเฟกต์ Reverb</div>
+        
+        <div class="control-group" style="margin-bottom: 12px;">
+            <label for="roomType" style="display:block; margin-bottom:5px; font-size:0.85rem;">ขนาดห้อง / ความก้อง:</label>
+            <select id="roomType">
+                <option value="small">ห้องเล็ก / ห้องซ้อม (กระชับ)</option>
+                <option value="medium" selected>ห้องโถงกลาง (กำลังดี)</option>
+                <option value="large">ห้องโถงใหญ่ / โบสถ์ (ก้องลึกยาว)</option>
+                <option value="gigantic">ห้องโถงมหึมา / อารีน่า (ใหญ่สะใจ ลูกใหญ่ๆ)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label class="range-label"><span>ระดับความก้อง (Reverb Wet):</span> <span id="reverbVal" class="value-label">40%</span></label>
+            <input type="range" id="reverbRange" min="0" max="100" value="40">
+        </div>
+    </div>
+
+    <!-- ปุ่มควบคุมการเล่น/หยุด -->
+    <button id="playBtn" class="btn btn-primary" disabled>▶️ ฟังตัวอย่างเสียง</button>
+
+    <!-- เครื่องเล่นเสียงทดฟัง -->
+    <audio id="audioPreview" controls style="display:none;"></audio>
+
+    <!-- ปุ่มบันทึก -->
+    <button id="saveMp3Btn" class="btn btn-mp3" disabled>🎵 บันทึกเป็นไฟล์ MP3</button>
+    <button id="saveWavBtn" class="btn btn-success" disabled>💾 บันทึกเป็นไฟล์ WAV</button>
+
+    <div id="statusText" class="status">สถานะ: กรุณาเลือกไฟล์เพลงเพื่อเริ่มต้น</div>
+</div>
+
+<script>
+    let audioCtx = null;
+    let audioBuffer = null;
+    
+    const fileInput = document.getElementById('audioFile');
+    const roomTypeSelect = document.getElementById('roomType');
+    const reverbRange = document.getElementById('reverbRange');
+    const reverbVal = document.getElementById('reverbVal');
+    
+    const eq1Range = document.getElementById('eq1Range');
+    const eq2Range = document.getElementById('eq2Range');
+    const eq3Range = document.getElementById('eq3Range');
+    const eq4Range = document.getElementById('eq4Range');
+    const eq5Range = document.getElementById('eq5Range');
+
+    const eq1Val = document.getElementById('eq1Val');
+    const eq2Val = document.getElementById('eq2Val');
+    const eq3Val = document.getElementById('eq3Val');
+    const eq4Val = document.getElementById('eq4Val');
+    const eq5Val = document.getElementById('eq5Val');
+
+    const playBtn = document.getElementById('playBtn');
+    const saveMp3Btn = document.getElementById('saveMp3Btn');
+    const saveWavBtn = document.getElementById('saveWavBtn');
+    const statusText = document.getElementById('statusText');
+    const audioPreview = document.getElementById('audioPreview');
+
+    let isPlaying = false;
+    let sourceNode = null;
+    let eqNodes = [];
+    let dryNode = null;
+    let wetNode = null;
+
+    function updateEqLabels() {
+        eq1Val.textContent = eq1Range.value + ' dB';
+        eq2Val.textContent = eq2Range.value + ' dB';
+        eq3Val.textContent = eq3Range.value + ' dB';
+        eq4Val.textContent = eq4Range.value + ' dB';
+        eq5Val.textContent = eq5Range.value + ' dB';
+    }
+
+    [eq1Range, eq2Range, eq3Range, eq4Range, eq5Range].forEach((range, idx) => {
+        range.addEventListener('input', () => {
+            updateEqLabels();
+            if (isPlaying && eqNodes[idx] && audioCtx) {
+                eqNodes[idx].gain.setTargetAtTime(parseFloat(range.value), audioCtx.currentTime, 0.05);
+            }
+        });
+    });
+
+    reverbRange.addEventListener('input', (e) => {
+        const valPercent = e.target.value;
+        reverbVal.textContent = valPercent + '%';
+
+        if (isPlaying && dryNode && wetNode && audioCtx) {
+            const val = parseInt(valPercent) / 100;
+            const dryLevel = Math.cos(val * Math.PI / 2);
+            const wetLevel = Math.sin(val * Math.PI / 2);
+            
+            dryNode.gain.setTargetAtTime(dryLevel, audioCtx.currentTime, 0.05);
+            wetNode.gain.setTargetAtTime(wetLevel, audioCtx.currentTime, 0.05);
+        }
+    });
+
+    roomTypeSelect.addEventListener('change', () => {
+        if (isPlaying) {
+            playBtn.click(); 
+            setTimeout(() => playBtn.click(), 100); 
+        }
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        statusText.textContent = `สถานะ: กำลังโหลดและถอดรหัสไฟล์ "${file.name}" (รอสักครู่)...`;
+
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            
+            statusText.textContent = `สถานะ: โหลดสำเร็จ! พร้อมฟังและปรับแต่ง EQ และ Reverb แล้วครับ`;
+            
+            // เปิดใช้งานปุ่มทั้งหมดทันทีที่โหลดเสร็จ
+            playBtn.disabled = false;
+            saveMp3Btn.disabled = false;
+            saveWavBtn.disabled = false;
+        } catch (err) {
+            statusText.textContent = 'สถานะ: ผิดพลาด! ไฟล์นี้อาจไม่ใช่ MP3/WAV หรือเสียหาย';
+            console.error(err);
+            alert('ไม่สามารถอ่านไฟล์เพลงนี้ได้ ลองเปลี่ยนไฟล์ที่เป็น .mp3 หรือ .wav ดูอีกครั้งครับ');
+        }
+    });
+
+    function createRoomImpulseResponse(ctx, roomType) {
+        let duration = 2.0;
+        let decay = 2.0;
+
+        if (roomType === 'small') {
+            duration = 1.0;
+            decay = 3.5; 
+        } else if (roomType === 'medium') {
+            duration = 2.2;
+            decay = 2.2; 
+        } else if (roomType === 'large') {
+            duration = 4.0;
+            decay = 1.5; 
+        } else if (roomType === 'gigantic') {
+            duration = 6.5;
+            decay = 1.1; 
+        }
+
+        const rate = ctx.sampleRate;
+        const length = rate * duration;
+        const impulse = ctx.createBuffer(2, length, rate);
+        const left = impulse.getChannelData(0);
+        const right = impulse.getChannelData(1);
+
+        for (let i = 0; i < length; i++) {
+            const n = Math.random() * 2 - 1;
+            left[i] = n * Math.pow(1 - i / length, decay);
+            right[i] = n * Math.pow(1 - i / length, decay);
+        }
+        return { impulse, duration };
+    }
+
+    function buildEqChain(context, destinationNode) {
+        const frequencies = [60, 230, 1000, 4000, 12000];
+        const ranges = [eq1Range, eq2Range, eq3Range, eq4Range, eq5Range];
+        
+        let lastNode = null;
+        eqNodes = [];
+
+        frequencies.forEach((freq, idx) => {
+            const filter = context.createBiquadFilter();
+            filter.type = 'peaking';
+            filter.frequency.value = freq;
+            filter.Q.value = 1.0;
+            filter.gain.value = parseFloat(ranges[idx].value);
+            
+            eqNodes.push(filter);
+
+            if (!lastNode) {
+                lastNode = filter;
+            } else {
+                eqNodes[idx - 1].connect(filter);
+                lastNode = filter;
+            }
+        });
+
+        lastNode.connect(destinationNode);
+        return eqNodes[0];
+    }
+
+    playBtn.addEventListener('click', async () => {
+        if (!audioBuffer) return;
+
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
+
+        if (isPlaying) {
+            if (sourceNode) {
+                try { sourceNode.stop(); } catch(e){}
+            }
+            isPlaying = false;
+            playBtn.textContent = '▶️ ฟังตัวอย่างเสียง';
+            return;
+        }
+
+        sourceNode = audioCtx.createBufferSource();
+        sourceNode.buffer = audioBuffer;
+
+        const val = parseInt(reverbRange.value) / 100;
+        const dryLevel = Math.cos(val * Math.PI / 2);
+        const wetLevel = Math.sin(val * Math.PI / 2);
+
+        const roomChoice = roomTypeSelect.value;
+        const roomData = createRoomImpulseResponse(audioCtx, roomChoice);
+
+        const convolver = audioCtx.createConvolver();
+        convolver.buffer = roomData.impulse;
+
+        dryNode = audioCtx.createGain();
+        wetNode = audioCtx.createGain();
+        dryNode.gain.value = dryLevel;
+        wetNode.gain.value = wetLevel;
+
+        const eqInput = buildEqChain(audioCtx, dryNode);
+        eqInput.connect(convolver);
+
+        sourceNode.connect(eqInput);
+
+        dryNode.connect(audioCtx.destination);
+        convolver.connect(wetNode);
+        wetNode.connect(audioCtx.destination);
+
+        sourceNode.start(0);
+        isPlaying = true;
+        playBtn.textContent = '⏹️ หยุดฟัง';
+
+        sourceNode.onended = () => {
+            isPlaying = false;
+            playBtn.textContent = '▶️ ฟังตัวอย่างเสียง';
+        };
+    });
+
+    async function renderAudio() {
+        if (isPlaying && sourceNode) {
+            try { sourceNode.stop(); } catch(e){}
+            isPlaying = false;
+            playBtn.textContent = '▶️ ฟังตัวอย่างเสียง';
+        }
+
+        const val = parseInt(reverbRange.value) / 100;
+        const dryLevel = Math.cos(val * Math.PI / 2);
+        const wetLevel = Math.sin(val * Math.PI / 2);
+
+        const roomChoice = roomTypeSelect.value;
+        const duration = audioBuffer.duration;
+        const sampleRate = audioBuffer.sampleRate;
+        const channels = audioBuffer.numberOfChannels;
+
+        const roomData = createRoomImpulseResponse(audioCtx, roomChoice);
+        const offlineCtx = new OfflineAudioContext(channels, sampleRate * (duration + roomData.duration), sampleRate);
+
+        const source = offlineCtx.createBufferSource();
+        source.buffer = audioBuffer;
+
+        const convolver = offlineCtx.createConvolver();
+        convolver.buffer = roomData.impulse;
+
+        const dryNodeOffline = offlineCtx.createGain();
+        const wetNodeOffline = offlineCtx.createGain();
+        dryNodeOffline.gain.value = dryLevel;
+        wetNodeOffline.gain.value = wetLevel;
+
+        const eqInputOffline = buildEqChain(offlineCtx, dryNodeOffline);
+        eqInputOffline.connect(convolver);
+
+        source.connect(eqInputOffline);
+
+        dryNodeOffline.connect(offlineCtx.destination);
+        convolver.connect(wetNodeOffline);
+        wetNodeOffline.connect(offlineCtx.destination);
+
+        source.start(0);
+        return await offlineCtx.startRendering();
+    }
+
+    saveWavBtn.addEventListener('click', async () => {
+        if (!audioBuffer) return;
+        statusText.textContent = 'สถานะ: กำลังสร้างไฟล์ WAV (รอสักครู่)...';
+        saveWavBtn.disabled = true;
+        saveMp3Btn.disabled = true;
+
+        const renderedBuffer = await renderAudio();
+        const wavData = bufferToWave(renderedBuffer, renderedBuffer.length);
+        const blob = new Blob([wavData], { type: 'audio/wav' });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'eq_reverb_output.wav';
+        document.body.appendChild(a);
+        a.click();
+        
+        audioPreview.src = url;
+        audioPreview.style.display = 'block';
+
+        statusText.textContent = 'สถานะ: บันทึกไฟล์ WAV สำเร็จเรียบร้อย!';
+        saveWavBtn.disabled = false;
+        saveMp3Btn.disabled = false;
+    });
+
+    saveMp3Btn.addEventListener('click', async () => {
+        if (!audioBuffer) return;
+        statusText.textContent = 'สถานะ: กำลังแปลงเป็นไฟล์ MP3 (รอสักครู่)...';
+        saveWavBtn.disabled = true;
+        saveMp3Btn.disabled = true;
+
+        const renderedBuffer = await renderAudio();
+        
+        try {
+            const mp3Blob = bufferToMp3(renderedBuffer);
+            const url = URL.createObjectURL(mp3Blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'eq_reverb_output.mp3';
+            document.body.appendChild(a);
+            a.click();
+            
+            audioPreview.src = url;
+            audioPreview.style.display = 'block';
+            statusText.textContent = 'สถานะ: บันทึกไฟล์ MP3 สำเร็จเรียบร้อย!';
+        } catch (err) {
+            statusText.textContent = 'สถานะ: เกิดข้อผิดพลาดในการแปลง MP3';
+            console.error(err);
+        }
+
+        saveWavBtn.disabled = false;
+        saveMp3Btn.disabled = false;
+    });
+
+    function bufferToMp3(abuffer) {
+        const channels = abuffer.numberOfChannels;
+        const sampleRate = abuffer.sampleRate;
+        const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, 128);
+        const sampleBlockSize = 1152;
+        
+        const left = abuffer.getChannelData(0);
+        const right = channels > 1 ? abuffer.getChannelData(1) : left;
+        
+        const samplesLeft = convertFloatToInt16(left);
+        const samplesRight = convertFloatToInt16(right);
+        
+        let mp3Data = [];
+        
+        for (let i = 0; i < samplesLeft.length; i += sampleBlockSize) {
+            const chunkLeft = samplesLeft.subarray(i, i + sampleBlockSize);
+            const chunkRight = samplesRight.subarray(i, i + sampleBlockSize);
+            const mp3buf = mp3encoder.encodeBuffer(chunkLeft, chunkRight);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+        
+        const mp3buf = mp3encoder.flush();
+        if (mp3buf.length > 0) {
+            mp3Data.push(mp3buf);
+        }
+        
+        return new Blob(mp3Data, { type: 'audio/mp3' });
+    }
+
+    function convertFloatToInt16(buffer) {
+        let l = buffer.length;
+        let buf = new Int16Array(l);
+        for (let i = 0; i < l; i++) {
+            let s = Math.max(-1, Math.min(1, buffer[i]));
+            buf[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        return buf;
+    }
+
+    function bufferToWave(abuffer, len) {
+        const numOfChan = abuffer.numberOfChannels;
+        const length = len * numOfChan * 2 + 44;
+        const out = new DataView(new ArrayBuffer(length));
+        let sample;
+        let offset = 0;
+        let pos = 0;
+
+        function setUint16(data) {
+            out.setUint16(pos, data, true);
+            pos += 2;
+        }
+
+        function setUint32(data) {
+            out.setUint32(pos, data, true);
+            pos += 4;
+        }
+
+        setUint32(0x46464952); // "RIFF"
+        setUint32(length - 8); 
+        setUint32(0x45564157); // "WAVE"
+
+        setUint32(0x20746d66); // "fmt " chunk
+        setUint32(16); 
+        setUint32(1); 
+        setUint16(numOfChan);
+        setUint32(abuffer.sampleRate);
+        setUint32(abuffer.sampleRate * 2 * numOfChan); 
+        setUint16(numOfChan * 2); 
+        setUint16(16); 
+
+        setUint32(0x61746164); // "data"
+        setUint32(length - pos - 4); 
+
+        const channels = [];
+        for (let i = 0; i < abuffer.numberOfChannels; i++) {
+            channels.push(abuffer.getChannelData(i));
+        }
+
+        while (offset < len) {
+            for (let i = 0; i < numOfChan; i++) {
+                sample = Math.max(-1, Math.min(1, channels[i][offset] || 0));
+                sample = (sample < 0 ? sample * 32768 : sample * 32767);
+                out.setInt16(pos, sample, true);
+                pos += 2;
+            }
+            offset++;
+        }
+
+        return out.buffer;
+    }
+</script>
+
+</body>
+</html>
